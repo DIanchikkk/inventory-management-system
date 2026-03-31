@@ -1,0 +1,25 @@
+# Environment
+.env
+.env.local
+*.local
+
+# Go
+backend/bin/
+*.exe
+*.test
+
+# Node
+frontend/node_modules/
+frontend/dist/
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
