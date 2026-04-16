@@ -55,6 +55,16 @@ func AuthRequired(secret string) gin.HandlerFunc {
 	}
 }
 
+// GetRole — роль из контекста после AuthRequired.
+func GetRole(c *gin.Context) (string, bool) {
+	v, ok := c.Get(ContextRoleKey)
+	if !ok {
+		return "", false
+	}
+	s, ok := v.(string)
+	return s, ok
+}
+
 // RequireAdmin возвращает 403, если в токене role != "admin".
 func RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -1,0 +1,11 @@
+.git
+.gitignore
+frontend/node_modules
+frontend/dist
+**/*.md
+!README.md
+*.log
+.DS_Store
+backend/.env
+.env
+.env.*

@@ -1,0 +1,36 @@
+# Запуск: docker compose up --build
+# API: http://localhost:8080  |  Postgres: localhost:5432
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+      POSTGRES_DB: inventory_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory -d inventory_db"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: host=db port=5432 user=inventory password=inventory dbname=inventory_db sslmode=disable
+      JWT_SECRET: docker-dev-change-in-production-min-32-chars!!
+      GIN_MODE: release
+      PORT: "8080"
+      JWT_EXPIRE_HOURS: "24"
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:4173,http://127.0.0.1:4173
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

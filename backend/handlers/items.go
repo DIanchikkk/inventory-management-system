@@ -1,12 +1,13 @@
 package handlers
 
-// При необходимости: JWT middleware на группу /items.
-
 import (
+	"encoding/csv"
 	"errors"
 	"inventory-system/backend/models"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -85,10 +86,15 @@ func (h *ItemHandler) CreateItem(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid purchase_date: use RFC3339 or YYYY-MM-DD"})
 		return
 	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name must not be empty"})
+		return
+	}
 
 	item := models.Item{
-		Name:         req.Name,
-		Description:  req.Description,
+		Name:         name,
+		Description:  strings.TrimSpace(req.Description),
 		Quantity:     req.Quantity,
 		PurchaseDate: pd,
 	}
@@ -129,9 +135,14 @@ func (h *ItemHandler) UpdateItem(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid purchase_date: use RFC3339 or YYYY-MM-DD"})
 		return
 	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name must not be empty"})
+		return
+	}
 
-	item.Name = req.Name
-	item.Description = req.Description
+	item.Name = name
+	item.Description = strings.TrimSpace(req.Description)
 	item.Quantity = req.Quantity
 	item.PurchaseDate = pd
 
@@ -162,4 +173,43 @@ func (h *ItemHandler) DeleteItem(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// ExportCSV — GET /items/export (UTF-8 CSV, отличительная фича для отчётов и экспорта)
+func (h *ItemHandler) ExportCSV(c *gin.Context) {
+	var items []models.Item
+	if err := h.DB.Order("name").Find(&items).Error; err != nil {
+		log.Printf("export csv: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="items.csv"`)
+
+	// BOM: Excel на Windows корректно открывает UTF-8
+	if _, err := c.Writer.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+		return
+	}
+
+	w := csv.NewWriter(c.Writer)
+	header := []string{"id", "name", "description", "quantity", "purchase_date", "created_at", "updated_at"}
+	if err := w.Write(header); err != nil {
+		return
+	}
+	for _, it := range items {
+		row := []string{
+			it.ID.String(),
+			it.Name,
+			it.Description,
+			strconv.Itoa(it.Quantity),
+			it.PurchaseDate.Format(time.RFC3339),
+			it.CreatedAt.Format(time.RFC3339),
+			it.UpdatedAt.Format(time.RFC3339),
+		}
+		if err := w.Write(row); err != nil {
+			return
+		}
+	}
+	w.Flush()
 }

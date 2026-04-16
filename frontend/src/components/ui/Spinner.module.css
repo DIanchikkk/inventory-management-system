@@ -1,0 +1,9 @@
+.spinner {
+  margin: 1rem 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.spinner--inline {
+  margin: 0;
+}

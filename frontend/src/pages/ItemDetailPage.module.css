@@ -1,0 +1,65 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.back {
+  margin: 0;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.backLink:hover {
+  color: var(--color-primary);
+}
+
+.card {
+  margin-top: 0;
+}
+
+.h1 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.desc {
+  color: var(--color-muted);
+  margin: 0 0 1.1rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.facts {
+  margin: 0 0 1.1rem;
+  padding: 0.85rem 1rem;
+  list-style: none;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.facts li {
+  padding: 0.35rem 0;
+  font-size: 0.90625rem;
+}
+
+.facts li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.actions {
+  margin-bottom: 1rem;
+}

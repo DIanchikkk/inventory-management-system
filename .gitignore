@@ -11,6 +11,7 @@ backend/bin/
 # Node
 frontend/node_modules/
 frontend/dist/
+frontend/.env
 *.log
 npm-debug.log*
 

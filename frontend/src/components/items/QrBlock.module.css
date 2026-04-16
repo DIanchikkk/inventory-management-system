@@ -1,0 +1,20 @@
+.qr-block {
+  margin-top: 1.35rem;
+  padding-top: 1.35rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.qr-block__caption {
+  margin-bottom: 0.85rem;
+}
+
+.qr-block__canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}

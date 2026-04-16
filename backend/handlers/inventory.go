@@ -17,9 +17,10 @@ type InventoryHandler struct {
 	DB *gorm.DB
 }
 
+// resultInput: actual_quantity через *int — иначе binding:"required" на int отбрасывает законное значение 0.
 type resultInput struct {
-	ItemID          uuid.UUID `json:"item_id" binding:"required"`
-	ActualQuantity  int       `json:"actual_quantity" binding:"required"`
+	ItemID         uuid.UUID `json:"item_id" binding:"required"`
+	ActualQuantity *int      `json:"actual_quantity" binding:"required"`
 }
 
 // computeResultStatus сравнивает факт с учётным количеством из карточки объекта.
@@ -54,16 +55,21 @@ func (h *InventoryHandler) CreateSession(c *gin.Context) {
 	c.JSON(http.StatusCreated, s)
 }
 
-// ListSessions — GET /inventory/sessions (только сессии текущего пользователя)
+// ListSessions — GET /inventory/sessions (user — свои сессии; admin — все).
 func (h *InventoryHandler) ListSessions(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	role, _ := middleware.GetRole(c)
 
 	var sessions []models.InventorySession
-	if err := h.DB.Where("created_by = ?", uid).Order("created_at DESC").Find(&sessions).Error; err != nil {
+	q := h.DB.Model(&models.InventorySession{})
+	if role != "admin" {
+		q = q.Where("created_by = ?", uid)
+	}
+	if err := q.Order("created_at DESC").Find(&sessions).Error; err != nil {
 		log.Printf("list sessions: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
@@ -72,8 +78,8 @@ func (h *InventoryHandler) ListSessions(c *gin.Context) {
 }
 
 type sessionDetailResponse struct {
-	Session models.InventorySession `json:"session"`
-	Items   []models.Item           `json:"items"`
+	Session models.InventorySession  `json:"session"`
+	Items   []models.Item            `json:"items"`
 	Results []models.InventoryResult `json:"results"`
 }
 
@@ -84,6 +90,7 @@ func (h *InventoryHandler) GetSession(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	role, _ := middleware.GetRole(c)
 
 	sid, ok := ParseUUIDParam(c, "id")
 	if !ok {
@@ -101,7 +108,7 @@ func (h *InventoryHandler) GetSession(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
-	if s.CreatedBy != uid {
+	if s.CreatedBy != uid && role != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
@@ -127,7 +134,7 @@ func (h *InventoryHandler) GetSession(c *gin.Context) {
 	})
 }
 
-func (h *InventoryHandler) sessionForUser(c *gin.Context, uid, sid uuid.UUID) (*models.InventorySession, bool) {
+func (h *InventoryHandler) sessionForUser(c *gin.Context, uid, sid uuid.UUID, role string) (*models.InventorySession, bool) {
 	var s models.InventorySession
 	if err := h.DB.First(&s, "id = ?", sid).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -138,7 +145,7 @@ func (h *InventoryHandler) sessionForUser(c *gin.Context, uid, sid uuid.UUID) (*
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return nil, false
 	}
-	if s.CreatedBy != uid {
+	if s.CreatedBy != uid && role != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return nil, false
 	}
@@ -149,22 +156,22 @@ func (h *InventoryHandler) sessionForUser(c *gin.Context, uid, sid uuid.UUID) (*
 	return &s, true
 }
 
-func (h *InventoryHandler) upsertResult(db *gorm.DB, sessionID uuid.UUID, in resultInput) error {
+func (h *InventoryHandler) upsertResult(db *gorm.DB, sessionID, itemID uuid.UUID, actualQty int) error {
 	var item models.Item
-	if err := db.First(&item, "id = ?", in.ItemID).Error; err != nil {
+	if err := db.First(&item, "id = ?", itemID).Error; err != nil {
 		return err
 	}
 	expected := item.Quantity
-	status := computeResultStatus(expected, in.ActualQuantity)
+	status := computeResultStatus(expected, actualQty)
 
 	var res models.InventoryResult
-	err := db.Where("session_id = ? AND item_id = ?", sessionID, in.ItemID).First(&res).Error
+	err := db.Where("session_id = ? AND item_id = ?", sessionID, itemID).First(&res).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		res = models.InventoryResult{
 			SessionID:        sessionID,
-			ItemID:           in.ItemID,
+			ItemID:           itemID,
 			ExpectedQuantity: expected,
-			ActualQuantity:   in.ActualQuantity,
+			ActualQuantity:   actualQty,
 			Status:           status,
 		}
 		return db.Create(&res).Error
@@ -173,7 +180,7 @@ func (h *InventoryHandler) upsertResult(db *gorm.DB, sessionID uuid.UUID, in res
 		return err
 	}
 	res.ExpectedQuantity = expected
-	res.ActualQuantity = in.ActualQuantity
+	res.ActualQuantity = actualQty
 	res.Status = status
 	return db.Save(&res).Error
 }
@@ -185,12 +192,13 @@ func (h *InventoryHandler) AddResult(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	role, _ := middleware.GetRole(c)
 	sid, ok := ParseUUIDParam(c, "id")
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	if _, ok := h.sessionForUser(c, uid, sid); !ok {
+	if _, ok := h.sessionForUser(c, uid, sid, role); !ok {
 		return
 	}
 
@@ -199,12 +207,16 @@ func (h *InventoryHandler) AddResult(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if in.ActualQuantity < 0 {
+	if in.ActualQuantity == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "actual_quantity is required"})
+		return
+	}
+	if *in.ActualQuantity < 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "actual_quantity must be >= 0"})
 		return
 	}
 
-	if err := h.upsertResult(h.DB, sid, in); err != nil {
+	if err := h.upsertResult(h.DB, sid, in.ItemID, *in.ActualQuantity); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
 			return
@@ -230,12 +242,13 @@ func (h *InventoryHandler) BatchResults(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	role, _ := middleware.GetRole(c)
 	sid, ok := ParseUUIDParam(c, "id")
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	if _, ok := h.sessionForUser(c, uid, sid); !ok {
+	if _, ok := h.sessionForUser(c, uid, sid, role); !ok {
 		return
 	}
 
@@ -246,7 +259,11 @@ func (h *InventoryHandler) BatchResults(c *gin.Context) {
 	}
 
 	for _, in := range inputs {
-		if in.ActualQuantity < 0 {
+		if in.ActualQuantity == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "actual_quantity is required", "item_id": in.ItemID})
+			return
+		}
+		if *in.ActualQuantity < 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "actual_quantity must be >= 0", "item_id": in.ItemID})
 			return
 		}
@@ -254,7 +271,7 @@ func (h *InventoryHandler) BatchResults(c *gin.Context) {
 
 	if err := h.DB.Transaction(func(tx *gorm.DB) error {
 		for _, in := range inputs {
-			if err := h.upsertResult(tx, sid, in); err != nil {
+			if err := h.upsertResult(tx, sid, in.ItemID, *in.ActualQuantity); err != nil {
 				return err
 			}
 		}
@@ -285,13 +302,14 @@ func (h *InventoryHandler) CompleteSession(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	role, _ := middleware.GetRole(c)
 	sid, ok := ParseUUIDParam(c, "id")
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
-	s, ok := h.sessionForUser(c, uid, sid)
+	s, ok := h.sessionForUser(c, uid, sid, role)
 	if !ok {
 		return
 	}

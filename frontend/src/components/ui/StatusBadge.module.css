@@ -1,0 +1,30 @@
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 2px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status--match {
+  background: var(--status-match-bg);
+  color: var(--status-match-text);
+}
+
+.status--mismatch {
+  background: var(--status-mismatch-bg);
+  color: var(--status-mismatch-text);
+}
+
+.status--missing {
+  background: var(--status-missing-bg);
+  color: var(--status-missing-text);
+}
+
+.status--pending {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}

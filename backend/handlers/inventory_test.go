@@ -1,9 +1,27 @@
 package handlers
 
 import (
+	"encoding/json"
 	"inventory-system/backend/models"
 	"testing"
+
+	"github.com/google/uuid"
 )
+
+func TestResultInputJSON_actualQuantityZero(t *testing.T) {
+	id := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+	raw := `{"item_id":"550e8400-e29b-41d4-a716-446655440000","actual_quantity":0}`
+	var in resultInput
+	if err := json.Unmarshal([]byte(raw), &in); err != nil {
+		t.Fatal(err)
+	}
+	if in.ItemID != id {
+		t.Fatalf("item id: got %v", in.ItemID)
+	}
+	if in.ActualQuantity == nil || *in.ActualQuantity != 0 {
+		t.Fatalf("actual_quantity: got %v", in.ActualQuantity)
+	}
+}
 
 func TestComputeResultStatus(t *testing.T) {
 	tests := []struct {

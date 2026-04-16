@@ -1,0 +1,81 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  max-width: 36rem;
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+.muted {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.rowAction {
+  text-align: right;
+  width: 6rem;
+}
+
+.openLink {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.openLink:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.badgeActive,
+.badgeDone,
+.badgeOther {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badgeActive {
+  background: var(--status-match-bg);
+  color: var(--status-match-text);
+}
+
+.badgeDone {
+  background: var(--color-surface-2);
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+}
+
+.badgeOther {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}

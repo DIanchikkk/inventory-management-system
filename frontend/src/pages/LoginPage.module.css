@@ -1,0 +1,98 @@
+.wrap {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  position: relative;
+  background-color: #2a1b18;
+  /* Обычный: беж сверху → коричневый низ */
+  background-image: linear-gradient(
+    160deg,
+    #e8ddd2 0%,
+    #d4c4b4 12%,
+    #a88f7e 32%,
+    #6d4f44 54%,
+    #3d2a25 72%,
+    #1a1210 88%,
+    #080605 100%
+  );
+}
+
+/* Один вариант «тёмного режима» — без бежа, глубокий коричневый */
+.wrapDark {
+  background-color: #050403;
+  background-image: linear-gradient(
+    160deg,
+    #3d3530 0%,
+    #2a221e 14%,
+    #1c1614 38%,
+    #110e0c 62%,
+    #080605 82%,
+    #030201 100%
+  );
+}
+
+.themeToggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(75, 46, 42, 0.22);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--color-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(43, 43, 43, 0.12);
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+}
+
+.themeToggle:hover {
+  background: rgba(255, 255, 255, 0.72);
+  transform: scale(1.04);
+}
+
+.themeToggle:focus-visible {
+  outline: 2px solid var(--color-accent, #b89b5e);
+  outline-offset: 2px;
+}
+
+.wrapDark .themeToggle {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+
+.wrapDark .themeToggle:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.cardWrap {
+  width: 100%;
+  max-width: 400px;
+}
+
+.cardWrap > div {
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.title {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lead {
+  margin: 0 0 1.1rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
