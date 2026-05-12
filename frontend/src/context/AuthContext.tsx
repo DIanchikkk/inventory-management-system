@@ -1,16 +1,8 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { fetchMe } from "../api/auth.api";
 import { getToken } from "../api/token";
 import type { User } from "../types";
-
-type AuthContextValue = {
-  user: User | null;
-  setUser: (u: User | null) => void;
-  refreshUser: () => Promise<void>;
-  isAdmin: boolean;
-};
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext } from "./auth.context";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -38,10 +30,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth outside AuthProvider");
-  return ctx;
 }

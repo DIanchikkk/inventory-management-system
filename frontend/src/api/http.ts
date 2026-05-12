@@ -2,7 +2,7 @@ import axios, { type AxiosError } from "axios";
 import { ApiError } from "../utils/errors";
 import { getToken } from "./token";
 
-function apiBaseUrl(): string {
+export function apiBaseUrl(): string {
   const raw = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
   return raw.replace(/\/+$/, "");
 }
@@ -15,18 +15,15 @@ export const http = axios.create({
 http.interceptors.request.use((config) => {
   const t = getToken();
   if (t) config.headers.Authorization = `Bearer ${t}`;
+  if (config.data instanceof FormData && config.headers && typeof config.headers === "object") {
+    delete (config.headers as Record<string, unknown>)["Content-Type"];
+  }
   return config;
 });
 
 function networkHint(): string {
   const base = apiBaseUrl();
-  return [
-    "Сервер API недоступен (запрос не дошёл до ответа).",
-    `Проверьте: 1) запущен ли бэкенд (например curl ${base}/health);`,
-    "2) во frontend/.env указано VITE_API_URL=" + base.split("?")[0] + " без лишнего слэша в конце;",
-    "3) после изменения .env перезапустите npm run dev.",
-    "Если открываете сайт не с localhost (другой IP/порт) — добавьте этот origin в CORS_ORIGINS на бэкенде.",
-  ].join(" ");
+  return `Нет связи с API (${base}). Запустите бэкенд, проверьте VITE_API_URL во frontend/.env и перезапустите Vite; для доступа по LAN на API нужен CORS_ALLOW_LAN=1.`;
 }
 
 http.interceptors.response.use(

@@ -6,7 +6,6 @@ type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   children: ReactNode;
-  /** Full width on phones; normal width from 480px */
   responsiveFull?: boolean;
 };
 

@@ -3,9 +3,7 @@ import styles from "./Card.module.css";
 
 export type CardProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
-  /** max-width ~520px, centered */
   narrow?: boolean;
-  /** max-width ~400px (login) */
   narrowSm?: boolean;
 };
 

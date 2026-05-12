@@ -7,7 +7,6 @@ type ModalProps = {
   children: ReactNode;
   footer?: ReactNode;
   onClose: () => void;
-  /** id для aria-labelledby */
   titleId?: string;
 };
 

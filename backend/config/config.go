@@ -16,6 +16,7 @@ type Config struct {
 	Port        string
 	GinMode     string
 	CORSOrigins []string
+	CORSAllowLAN bool
 }
 
 func Load() (*Config, error) {
@@ -25,6 +26,7 @@ func Load() (*Config, error) {
 	jwt := getEnv("JWT_SECRET", "your-secret-key-change-me")
 	port := getEnv("PORT", "8080")
 	ginMode := getEnv("GIN_MODE", "debug")
+	corsAllowLANRaw := strings.TrimSpace(getEnv("CORS_ALLOW_LAN", ""))
 
 	return &Config{
 		DatabaseURL: dataBase,
@@ -33,10 +35,10 @@ func Load() (*Config, error) {
 		Port:        port,
 		GinMode:     ginMode,
 		CORSOrigins: parseCORSOrigins(getEnv("CORS_ORIGINS", "")),
+		CORSAllowLAN: corsAllowLANRaw == "1" || strings.EqualFold(corsAllowLANRaw, "true"),
 	}, nil
 }
 
-// defaultCORSOrigins — типичные origin Vite (5173 занят →5174/5175) и vite preview (4173).
 var defaultCORSOrigins = []string{
 	"http://localhost:5173", "http://127.0.0.1:5173",
 	"http://localhost:5174", "http://127.0.0.1:5174",
@@ -44,7 +46,6 @@ var defaultCORSOrigins = []string{
 	"http://localhost:4173", "http://127.0.0.1:4173",
 }
 
-// parseCORSOrigins — список origin через запятую; по умолчанию Vite dev.
 func parseCORSOrigins(s string) []string {
 	if s == "" {
 		return defaultCORSOrigins
@@ -63,7 +64,6 @@ func parseCORSOrigins(s string) []string {
 	return out
 }
 
-// parseJWTTTL — часы из env; при ошибке или вне 1…8760 — 24 ч.
 func parseJWTTTL(s string) time.Duration {
 	h, err := strconv.Atoi(s)
 	if err != nil || h < 1 || h > 8760 {

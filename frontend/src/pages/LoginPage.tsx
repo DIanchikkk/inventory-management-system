@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/auth.api";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -51,7 +51,7 @@ export function LoginPage() {
       try {
         localStorage.setItem(DARK_BG_KEY, next ? "1" : "0");
       } catch {
-        /* ignore */
+        void 0;
       }
       return next;
     });
@@ -102,6 +102,7 @@ export function LoginPage() {
               id="login-pass"
               label="Пароль"
               type="password"
+              passwordToggle
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"

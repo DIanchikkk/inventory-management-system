@@ -32,8 +32,36 @@ func main() {
 }
 
 func migrateAndSeed(db *gorm.DB) error {
-	if err := db.AutoMigrate(&models.User{}, &models.Item{}, &models.InventorySession{}, &models.InventoryResult{}); err != nil {
+	// Сначала справочник категорий и (при старой БД) nullable category_id + бэкфилл — иначе AutoMigrate на Item
+	// сгенерирует ADD category_id NOT NULL и PostgreSQL упадёт на уже существующих строках (23502).
+	if err := db.AutoMigrate(&models.User{}, &models.Category{}); err != nil {
 		return err
 	}
-	return seed.Run(db)
+	if err := seed.PrepareItemsCategoryIDColumn(db); err != nil {
+		return err
+	}
+	if err := seed.MigrateItemsCategoryID(db); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(
+		&models.Item{},
+		&models.ItemHistoryLog{},
+		&models.InventorySession{},
+		&models.InventoryResult{},
+		&models.InventorySessionEvent{},
+		&models.InventoryStockLedger{},
+		&models.InventoryDocYearSeq{},
+	); err != nil {
+		return err
+	}
+	if err := seed.MigrateItemsCategoryID(db); err != nil {
+		return err
+	}
+	if err := seed.BackfillInventoryDocuments(db); err != nil {
+		return err
+	}
+	if err := seed.Run(db); err != nil {
+		return err
+	}
+	return seed.BackfillInventoryDocuments(db)
 }

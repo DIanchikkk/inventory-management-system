@@ -1,0 +1,13 @@
+{
+  "name": "inventory-system-root",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:fe": "npm --prefix frontend run dev",
+    "dev:be": "go run ./backend",
+    "build:fe": "npm --prefix frontend run build",
+    "lint:fe": "npm --prefix frontend run lint",
+    "test:be": "go test ./backend/...",
+    "download:seed-images": "bash scripts/download-seed-images.sh"
+  }
+}

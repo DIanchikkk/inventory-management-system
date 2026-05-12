@@ -28,9 +28,29 @@ const SessionDetailPage = lazy(async () => {
   const m = await import("./pages/SessionDetailPage");
   return { default: m.SessionDetailPage };
 });
+const SessionPrintSheetPage = lazy(async () => {
+  const m = await import("./pages/SessionPrintSheetPage");
+  return { default: m.SessionPrintSheetPage };
+});
+const InventoryItemQrLandingPage = lazy(async () => {
+  const m = await import("./pages/InventoryItemQrLandingPage");
+  return { default: m.InventoryItemQrLandingPage };
+});
 const ReportsPage = lazy(async () => {
   const m = await import("./pages/ReportsPage");
   return { default: m.ReportsPage };
+});
+const ReplacementReportPage = lazy(async () => {
+  const m = await import("./pages/ReplacementReportPage");
+  return { default: m.ReplacementReportPage };
+});
+const QrLabelsPage = lazy(async () => {
+  const m = await import("./pages/QrLabelsPage");
+  return { default: m.QrLabelsPage };
+});
+const ReportsStockLedgerPage = lazy(async () => {
+  const m = await import("./pages/ReportsStockLedgerPage");
+  return { default: m.ReportsStockLedgerPage };
 });
 const SettingsPage = lazy(async () => {
   const m = await import("./pages/SettingsPage");
@@ -67,10 +87,14 @@ export default function App() {
             <Route path="inventory" element={<Navigate to="/inventory/sessions" replace />} />
             <Route path="items" element={<ItemsPage />} />
             <Route path="items/:id" element={<ItemDetailPage />} />
+            <Route path="inventory/item/:itemId" element={<InventoryItemQrLandingPage />} />
             <Route path="inventory/sessions" element={<InventorySessionsPage />} />
+            <Route path="inventory/sessions/:sessionId/print-sheet" element={<SessionPrintSheetPage />} />
             <Route path="inventory/sessions/:sessionId" element={<SessionDetailPage />} />
-            <Route path="inventory/sessions/:sessionId/results" element={<SessionDetailPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="reports/replacement" element={<ReplacementReportPage />} />
+            <Route path="reports/labels" element={<QrLabelsPage />} />
+            <Route path="reports/stock-ledger" element={<ReportsStockLedgerPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>

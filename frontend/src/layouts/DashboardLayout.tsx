@@ -1,9 +1,25 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { logout as authLogout } from "../api/auth.api";
-import { useAuth } from "../context/AuthContext";
+import { fetchDashboardSummary } from "../api/dashboard.api";
+import type { DashboardSummary } from "../types";
+import { useAuth } from "../context/useAuth";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import styles from "./DashboardLayout.module.css";
+
+/** Контекст для страниц внутри лейаута: единая сводка без повторных запросов с каждой страницы. */
+export type DashboardOutletContext = {
+  dashboardSummary: DashboardSummary | null;
+  refreshDashboardSummary: () => Promise<void>;
+};
+
+async function fetchDashboardSummarySafe(): Promise<DashboardSummary | null> {
+  try {
+    return await fetchDashboardSummary();
+  } catch {
+    return null;
+  }
+}
 
 function IconBox({ className }: { className?: string }) {
   return (
@@ -112,6 +128,18 @@ function NavItem({
   );
 }
 
+function badgeFromUsername(username: string): string {
+  const parts = username
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  }
+  const plain = parts[0] ?? "";
+  return plain.slice(0, 2).toUpperCase() || "U";
+}
+
 export function DashboardLayout() {
   const nav = useNavigate();
   const isDesktop = useMediaQuery("(min-width: 960px)");
@@ -119,22 +147,56 @@ export function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, refreshUser, setUser } = useAuth();
   const location = useLocation();
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const narrow = isDesktop && sidebarCollapsed;
+  const userBadgeText = user ? (user.role === "admin" ? "A" : badgeFromUsername(user.username)) : "U";
 
   useEffect(() => {
     void refreshUser();
   }, [refreshUser]);
 
+  const refreshDashboardSummary = useCallback(async () => {
+    const s = await fetchDashboardSummarySafe();
+    if (s !== null) setSummary(s);
+  }, []);
+
   useEffect(() => {
-    if (isDesktop) setSidebarOpen(false);
-  }, [isDesktop]);
+    let cancelled = false;
+    void fetchDashboardSummarySafe().then((s) => {
+      if (!cancelled && s !== null) setSummary(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname]);
 
   function doLogout() {
     authLogout();
     setUser(null);
     nav("/login", { replace: true });
   }
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!userMenuRef.current) return;
+      if (!userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setUserMenuOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [userMenuOpen]);
 
   function closeMobileNav() {
     if (!isDesktop) setSidebarOpen(false);
@@ -165,7 +227,7 @@ export function DashboardLayout() {
           <span className={styles.brandMark} aria-hidden />
           <div className={styles.brandText}>
             <div className={styles.brandTitle}>Inventory</div>
-            <div className={styles.brandSub}>Производственный учёт</div>
+            <div className={styles.brandSub}>Учёт объектов и инвентаризация</div>
           </div>
         </div>
         <nav className={styles.nav}>
@@ -177,7 +239,7 @@ export function DashboardLayout() {
             icon={<IconClipboard className={styles.navIcon} />}
             onNavigate={closeMobileNav}
           >
-            Инвентаризация
+            Документы инвентаризации
           </NavItem>
           <NavItem to="/reports" icon={<IconChart className={styles.navIcon} />} onNavigate={closeMobileNav}>
             Отчёты
@@ -224,27 +286,81 @@ export function DashboardLayout() {
                 : location.pathname.startsWith("/settings")
                   ? "Настройки"
                   : location.pathname.startsWith("/inventory")
-                    ? "Инвентаризация"
+                    ? "Документы инвентаризации"
                     : "Объекты учёта"}
             </span>
           </div>
           <div className={styles.headerRight}>
             {user && (
-              <div className={styles.user}>
-                <span className={styles.userName}>{user.username}</span>
-                <span className={styles.userRole}>
-                  {user.role === "admin" ? "Администратор" : "Пользователь"}
-                </span>
+              <div className={styles.userMenuWrap} ref={userMenuRef}>
+                {user.role === "admin" && <span className={styles.userRoleInline}>Администратор</span>}
+                <button
+                  type="button"
+                  className={styles.userMenuBtn}
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  title={user.username}
+                >
+                  {userBadgeText}
+                </button>
+                {userMenuOpen && (
+                  <div className={styles.userMenu} role="menu" aria-label="Меню пользователя">
+                    <p className={styles.userMenuName}>{user.username}</p>
+                    <p className={styles.userMenuHint}>Быстрые действия</p>
+                    <button type="button" className={styles.userMenuItem} onClick={() => nav("/settings")}>
+                      Настройки
+                    </button>
+                    <div className={styles.userMenuDivider} />
+                    <button type="button" className={`${styles.userMenuItem} ${styles.userMenuItemDanger}`} onClick={doLogout}>
+                      Выйти
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-            <button type="button" className={styles.logoutBtn} onClick={doLogout}>
-              Выйти
-            </button>
           </div>
         </header>
         <main className={styles.main}>
           <div className={styles.mainInner}>
-            <Outlet />
+            {summary && (
+              <section className={styles.summaryStrip} aria-label="Сводка по системе">
+                <span className={styles.summaryStripTitle}>Сводка:</span>
+                <span className={styles.summaryMetric}>
+                  объектов учёта <strong>{summary.items_total.toLocaleString("ru-RU")}</strong>
+                </span>
+                <span className={styles.summaryMetric}>
+                  ниже мин. остатка <strong>{summary.items_low_stock.toLocaleString("ru-RU")}</strong>
+                </span>
+                <span className={styles.summaryMetric}>
+                  сессий в работе <strong>{summary.sessions_active_or_review.toLocaleString("ru-RU")}</strong>
+                </span>
+                <span className={styles.summaryMetric}>
+                  завершено <strong>{summary.sessions_completed.toLocaleString("ru-RU")}</strong>
+                </span>
+                <span className={styles.summaryMetric}>
+                  в архиве <strong>{summary.sessions_archived.toLocaleString("ru-RU")}</strong>
+                </span>
+                <Link
+                  className={[
+                    styles.summaryMetric,
+                    styles.summaryRemind,
+                    (summary.items_replacement_overdue ?? 0) > 0 ? styles.summaryRemindUrgent : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  to="/items?replacement_remind=1"
+                  title="Открыть объекты с наступившим или близким сроком замены"
+                >
+                  замена просрочена{" "}
+                  <strong>{(summary.items_replacement_overdue ?? 0).toLocaleString("ru-RU")}</strong>
+                  {" · "}
+                  до 90 дн.{" "}
+                  <strong>{(summary.items_replacement_due_soon ?? 0).toLocaleString("ru-RU")}</strong>
+                </Link>
+              </section>
+            )}
+            <Outlet context={{ dashboardSummary: summary, refreshDashboardSummary } satisfies DashboardOutletContext} />
           </div>
         </main>
       </div>

@@ -1,4 +1,3 @@
-/** Формат ошибок API: `{ error: string }` с бэкенда. */
 export class ApiError extends Error {
   status: number;
   body?: unknown;

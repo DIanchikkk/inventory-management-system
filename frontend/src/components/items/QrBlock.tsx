@@ -3,18 +3,25 @@ import { MutedText } from "../ui/MutedText";
 import styles from "./QrBlock.module.css";
 
 type QrBlockProps = {
+  title?: string;
   url: string;
-  /** SVG size in px; scales down via CSS on narrow screens */
   size?: number;
+  /** Пояснение под кодом (для записки и пользователей). */
+  hint?: string;
 };
 
-export function QrBlock({ url, size = 160 }: QrBlockProps) {
+export function QrBlock({ title = "QR-код", url, size = 160, hint }: QrBlockProps) {
   return (
     <div className={styles["qr-block"]}>
       <p className={styles["qr-block__caption"]}>
-        <MutedText>QR — быстрый переход к карточке (URL)</MutedText>
+        <MutedText>{title}</MutedText>
       </p>
       <QRCodeSVG className={styles["qr-block__canvas"]} value={url} size={size} level="M" />
+      {hint ? (
+        <p className={styles["qr-block__hint"]}>
+          <MutedText>{hint}</MutedText>
+        </p>
+      ) : null}
     </div>
   );
 }

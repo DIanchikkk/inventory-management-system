@@ -28,7 +28,7 @@ inventory-system/          ← корень Git-репозитория
 ├── frontend/              ← React + Vite + TypeScript
 ├── docs/                  ← текст для пояснительной записки
 ├── Dockerfile             ← образ API
-├── docker-compose.yml     ← Postgres + API
+├── compose.yaml           ← Postgres + API
 ├── go.mod / go.sum        ← модуль Go (корень)
 ├── README.md
 └── ARCHITECTURE.md        ← этот файл
@@ -69,7 +69,7 @@ inventory-system/          ← корень Git-репозитория
 ## Инфраструктура и CI
 
 - **Dockerfile** — многоэтапная сборка бинарника `./backend` в образ Alpine.
-- **docker-compose.yml** — сервис `db` (Postgres) + `api` (образ из Dockerfile), healthcheck БД.
+- **compose.yaml** — сервис `db` (Postgres) + `api` (образ из Dockerfile), healthcheck БД.
 - **`.github/workflows/ci.yml`** — при push/PR: `go test ./backend/...` (без `./...`, чтобы не подхватывать пакеты из `frontend/node_modules`). Это **не часть приложения**, а проверка качества кода на серверах GitHub.
 
 ---

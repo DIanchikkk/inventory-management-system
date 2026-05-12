@@ -1,3 +1,48 @@
+.thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.thumbDash {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.pick {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+.pickInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.retiredMark {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.cardThumb {
+  width: 100%;
+  max-height: 140px;
+  margin: 0 0 0.65rem;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
 .page {
   display: flex;
   flex-direction: column;
@@ -32,8 +77,33 @@
   gap: 0.5rem;
 }
 
+.actionLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.actionLink:hover {
+  background: var(--color-secondary);
+}
+
 .toolbar {
   max-width: 28rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .desktopOnly {
@@ -102,6 +172,10 @@
   white-space: nowrap;
 }
 
+.nowrapCell {
+  white-space: nowrap;
+}
+
 .textBtn,
 .dangerBtn {
   background: none;
@@ -141,7 +215,82 @@
   margin: 0;
 }
 
-@media (min-width: 900px) {
+.lowStockBanner {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-ok-border);
+  background: var(--color-ok-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+}
+
+.lowStockBanner strong {
+  color: var(--color-ok-text);
+}
+
+.lowStockAction {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.lowStockAction:hover {
+  color: var(--color-primary-hover);
+}
+
+.modalHint {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.bulkLabel {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--color-text);
+}
+
+.bulkSelect {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-border);
+  font-size: 0.9375rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.modalField + .modalField {
+  margin-top: 0.85rem;
+}
+
+@media print {
+  .toolbar,
+  .filters,
+  .pagination,
+  .pick,
+  .pickInline,
+  .rowActions,
+  .cardActions,
+  .actionLink {
+    display: none !important;
+  }
+}
+
+@media (min-width: 640px) {
   .desktopOnly {
     display: block;
   }

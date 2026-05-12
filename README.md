@@ -40,7 +40,7 @@ docker compose up --build
 
 API: `http://localhost:8080`, проверка: `curl -s http://localhost:8080/health`.
 
-Переменные в `docker-compose.yml` можно подправить (в т.ч. `JWT_SECRET` для реального стенда).
+Переменные в `compose.yaml` можно подправить (в т.ч. `JWT_SECRET` для реального стенда).
 
 ### Вариант B: локально
 
@@ -79,6 +79,9 @@ npm run dev
 
 - **admin** / **admin123**
 - **user** / **user123**
+- При старте backend автоматически добавляются демо-данные для проверки интерфейса:
+  5 объектов учёта + 3 инвентаризационные сессии с разными статусами и строками результатов.
+- Для очистки старых данных перед автозаполнением используйте `INVENTORY_RESET_DATA=1`.
 
 ## CI
 
@@ -127,7 +130,7 @@ inventory-system/
 ├── backend/             # Go API
 ├── frontend/            # React + Vite
 ├── docs/                # заметки для записки
-├── docker-compose.yml
+├── compose.yaml
 ├── Dockerfile
 ├── go.mod
 └── ARCHITECTURE.md      # схема и обоснование структуры
