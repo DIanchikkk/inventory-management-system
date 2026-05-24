@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// DashboardHandler — агрегированные показатели для главного экрана (КПИ по учёту).
 type DashboardHandler struct {
 	DB *gorm.DB
 }
@@ -18,8 +17,8 @@ type DashboardHandler struct {
 type dashboardSummaryResponse struct {
 	ItemsTotal              int64 `json:"items_total"`
 	ItemsLowStock           int64 `json:"items_low_stock"`
-	ItemsReplacementOverdue int64 `json:"items_replacement_overdue"`  // плановая дата замены уже прошла
-	ItemsReplacementDueSoon int64 `json:"items_replacement_due_soon"` // замена в ближайшие 90 дней
+	ItemsReplacementOverdue int64 `json:"items_replacement_overdue"`
+	ItemsReplacementDueSoon int64 `json:"items_replacement_due_soon"`
 	SessionsActiveOrReview  int64 `json:"sessions_active_or_review"`
 	SessionsCompleted       int64 `json:"sessions_completed"`
 	SessionsArchived        int64 `json:"sessions_archived"`
@@ -27,7 +26,6 @@ type dashboardSummaryResponse struct {
 
 const replacementDueDateSQL = "(purchase_date::date + ((service_life_years::text || ' years')::interval))::date"
 
-// Summary — GET /dashboard/summary
 func (h *DashboardHandler) Summary(c *gin.Context) {
 	out := dashboardSummaryResponse{}
 	if err := h.DB.Model(&models.Item{}).Where("retired_at IS NULL").Count(&out.ItemsTotal).Error; err != nil {

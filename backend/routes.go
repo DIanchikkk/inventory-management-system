@@ -5,6 +5,7 @@ import (
 	"inventory-system/backend/config"
 	"inventory-system/backend/handlers"
 	"inventory-system/backend/middleware"
+	"inventory-system/backend/uploads"
 	"log"
 	"net/http"
 	"os"
@@ -16,88 +17,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// uploadsItemImagesHasJPEG true, если в каталоге есть хотя бы один .jpg (не пустая заглушка после mkdir).
-func uploadsItemImagesHasJPEG(root string) bool {
-	dir := filepath.Join(root, "item-images")
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return false
-	}
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		if strings.HasSuffix(strings.ToLower(e.Name()), ".jpg") {
-			return true
-		}
-	}
-	return false
-}
-
-// uploadsRootCandidates — абсолютные пути: cwd, родители, каталог бинарника (go run кладёт exe во временную папку).
-func uploadsRootCandidates() []string {
-	wd, err := os.Getwd()
-	if err != nil {
-		wd = "."
-	}
-	raw := []string{
-		filepath.Join(wd, "uploads"),
-		filepath.Join(wd, "..", "uploads"),
-		filepath.Join(wd, "..", "..", "uploads"),
-		"uploads",
-		filepath.Join("..", "uploads"),
-	}
-	if exe, err := os.Executable(); err == nil {
-		exedir := filepath.Dir(exe)
-		raw = append(raw,
-			filepath.Join(exedir, "uploads"),
-			filepath.Join(exedir, "..", "uploads"),
-		)
-	}
-	seen := map[string]struct{}{}
-	var out []string
-	for _, p := range raw {
-		abs, err := filepath.Abs(filepath.Clean(p))
-		if err != nil {
-			continue
-		}
-		if _, ok := seen[abs]; ok {
-			continue
-		}
-		seen[abs] = struct{}{}
-		out = append(out, abs)
-	}
-	return out
-}
-
-// uploadsRootDir — корень раздачи GET /uploads/...
-// Переменная INVENTORY_UPLOADS_ROOT переопределяет поиск (абсолютный или относительный путь к каталогу uploads).
-func uploadsRootDir() string {
-	if v := strings.TrimSpace(os.Getenv("INVENTORY_UPLOADS_ROOT")); v != "" {
-		abs, err := filepath.Abs(filepath.Clean(v))
-		if err != nil {
-			return filepath.Clean(v)
-		}
-		return abs
-	}
-	for _, root := range uploadsRootCandidates() {
-		if uploadsItemImagesHasJPEG(root) {
-			return root
-		}
-	}
-	for _, root := range uploadsRootCandidates() {
-		if fi, err := os.Stat(filepath.Join(root, "item-images")); err == nil && fi.IsDir() {
-			return root
-		}
-		if fi, err := os.Stat(filepath.Join(root, "items")); err == nil && fi.IsDir() {
-			return root
-		}
-	}
-	abs, _ := filepath.Abs(filepath.Join(".", "uploads"))
-	return abs
-}
-
-// uploadsCORPHeaders — чтобы <img src="http://API:8080/uploads/..."> с фронта (другой origin) не блокировались политикой CORP в браузере.
 func uploadsCORPHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/uploads/") {
@@ -114,22 +33,22 @@ func setupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	r.Use(middleware.CORS(cfg.CORSOrigins, cfg.CORSAllowLAN))
 	r.Use(uploadsCORPHeaders())
 
-	uploadsRoot := uploadsRootDir()
+	uploadsRoot := uploads.ResolveRoot()
 	if abs, err := filepath.Abs(uploadsRoot); err == nil {
 		uploadsRoot = abs
 	}
 	if err := os.MkdirAll(filepath.Join(uploadsRoot, "item-images"), 0o755); err != nil {
 		log.Printf("uploads: mkdir %s: %v", uploadsRoot, err)
 	}
-	if !uploadsItemImagesHasJPEG(uploadsRoot) {
-		log.Printf("uploads: в %s/item-images нет JPEG — демо-фото не отдадутся; задайте INVENTORY_UPLOADS_ROOT или запускайте API из корня репозитория / папки backend рядом с uploads", uploadsRoot)
+	if !uploads.ItemImagesHasJPEG(uploadsRoot) {
+		log.Printf("uploads: в %s/item-images нет JPEG — демо-фото не отдадутся; задайте INVENTORY_UPLOADS_ROOT или положите файлы в frontend/src/assets/uploads/item-images", uploadsRoot)
 	} else {
 		log.Printf("uploads: раздача статики из %s", uploadsRoot)
 	}
-	// Не используем gin.Router.Static: в gin v1.9.1 createStaticHandler с Dir(list=false) сначала пишет 404 и при промахе fs.Open
-	// подменяет ответ на noRoute («404 page not found»), из‑за чего файлы с диска не отдаются.
+
 	uploadsHTTP := http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadsRoot)))
 	serveUploads := func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, must-revalidate")
 		uploadsHTTP.ServeHTTP(c.Writer, c.Request)
 	}
 	r.GET("/uploads/*filepath", serveUploads)
@@ -137,37 +56,39 @@ func setupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	r.GET("/health", healthHandler(db))
 
-	auth := &handlers.AuthHandler{DB: db, JWTSecret: cfg.JWTSecret, JWTTTL: cfg.JWTTTL}
-	r.POST("/auth/login", middleware.LoginRateLimit(), auth.Login)
+	authHandler := &handlers.AuthHandler{DB: db, JWTSecret: cfg.JWTSecret, JWTTTL: cfg.JWTTTL}
+	r.POST("/auth/login", middleware.LoginRateLimit(), authHandler.Login)
 
 	protected := r.Group("")
 	protected.Use(middleware.AuthRequired(cfg.JWTSecret))
 	protected.Use(middleware.SyncRoleFromDB(db))
-	protected.GET("/auth/me", auth.Me)
+	protected.GET("/auth/me", authHandler.Me)
 
-	items := &handlers.ItemHandler{DB: db}
+	itemsHandler := &handlers.ItemHandler{DB: db}
 	cats := &handlers.CategoryHandler{DB: db}
 	protected.GET("/categories", cats.ListCategories)
-	protected.GET("/items", items.ListItems)
-	protected.GET("/items/:id/history", items.ListItemHistory)
-	protected.GET("/items/:id", items.GetItem)
+	protected.GET("/items", itemsHandler.ListItems)
+	protected.GET("/items/:id/history", itemsHandler.ListItemHistory)
+	protected.GET("/items/:id", itemsHandler.GetItem)
 
 	dash := &handlers.DashboardHandler{DB: db}
 	protected.GET("/dashboard/summary", dash.Summary)
 
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdmin())
-	admin.GET("/items/export", items.ExportCSV)
-	admin.POST("/items/import", items.ImportCSV)
-	admin.POST("/items/bulk-meta", items.BulkUpdateMeta)
-	admin.GET("/export/snapshot.json", items.ExportSnapshotJSON)
+	admin.GET("/items/export", itemsHandler.ExportCSV)
+	admin.POST("/items/import", itemsHandler.ImportCSV)
+	admin.POST("/items/bulk-meta", itemsHandler.BulkUpdateMeta)
+	admin.GET("/export/snapshot.json", itemsHandler.ExportSnapshotJSON)
 	admin.POST("/categories", cats.CreateCategory)
-	admin.POST("/items", items.CreateItem)
-	admin.PUT("/items/:id", items.UpdateItem)
-	admin.DELETE("/items/:id", items.DeleteItem)
+	admin.POST("/items", itemsHandler.CreateItem)
+	admin.PUT("/items/:id", itemsHandler.UpdateItem)
+	admin.DELETE("/items/:id", itemsHandler.DeleteItem)
 
 	inv := &handlers.InventoryHandler{DB: db}
 	protected.GET("/inventory/stock-ledger/global", inv.ListGlobalStockLedger)
+	protected.GET("/inventory/stock-adjustments", inv.ListGlobalStockAdjustments)
+	protected.GET("/inventory/stock-adjustments/:id", inv.GetStockAdjustment)
 	protected.POST("/inventory/sessions", inv.CreateSession)
 	protected.GET("/inventory/sessions", inv.ListSessions)
 	protected.GET("/inventory/sessions/:id", inv.GetSession)
@@ -177,6 +98,7 @@ func setupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	protected.GET("/inventory/sessions/:id/audit", inv.ListAuditEvents)
 	protected.GET("/inventory/sessions/:id/audit/export", inv.ExportAuditCSV)
 	protected.GET("/inventory/sessions/:id/stock-ledger", inv.ListSessionStockLedger)
+	protected.GET("/inventory/sessions/:id/stock-adjustments", inv.ListSessionStockAdjustments)
 	protected.GET("/inventory/sessions/:id/discrepancies/export", inv.ExportDiscrepanciesCSV)
 	protected.POST("/inventory/sessions/:id/review", inv.SendToReview)
 	protected.POST("/inventory/sessions/:id/complete", inv.CompleteSession)

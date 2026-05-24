@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// upsertUser создаёт пользователя или обновляет роль и пароль (для dev).
 func upsertUser(db *gorm.DB, username, role, plain string) error {
 	var u models.User
 	err := db.Where("username = ?", username).First(&u).Error
@@ -55,6 +54,12 @@ func migrateItemImageStoragePaths(db *gorm.DB) error {
 func resetInventoryData(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Unscoped().Where("1 = 1").Delete(&models.InventoryStockLedger{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Where("1 = 1").Delete(&models.StockAdjustmentDocument{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Where("1 = 1").Delete(&models.StockAdjustmentDocYearSeq{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Unscoped().Where("1 = 1").Delete(&models.InventorySessionEvent{}).Error; err != nil {
@@ -153,9 +158,6 @@ func seedDemoInventory(db *gorm.DB) error {
 	return nil
 }
 
-// Run создаёт тестовых пользователей, если таблица users пустая.
-// Если задано INVENTORY_FORCE_SEED=1 или true — всегда создаёт/обновляет admin и user
-// (удобно для локальной разработки; в production не включать).
 func Run(db *gorm.DB) error {
 	if err := migrateItemImageStoragePaths(db); err != nil {
 		return err

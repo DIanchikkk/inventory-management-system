@@ -12,7 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListAuditEvents — GET /inventory/sessions/:id/audit
 func (h *InventoryHandler) ListAuditEvents(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {
@@ -48,7 +47,6 @@ func (h *InventoryHandler) ListAuditEvents(c *gin.Context) {
 	c.JSON(http.StatusOK, events)
 }
 
-// SendToReview — POST /inventory/sessions/:id/review
 func (h *InventoryHandler) SendToReview(c *gin.Context) {
 	expected, bad := parseExpectedUpdatedAt(c)
 	if bad {
@@ -88,7 +86,6 @@ func (h *InventoryHandler) SendToReview(c *gin.Context) {
 	c.JSON(http.StatusOK, s)
 }
 
-// ArchiveSession — POST /inventory/sessions/:id/archive
 func (h *InventoryHandler) ArchiveSession(c *gin.Context) {
 	expected, bad := parseExpectedUpdatedAt(c)
 	if bad {
@@ -143,7 +140,6 @@ type discrepancyItem struct {
 	Item   models.Item            `json:"item"`
 }
 
-// ListDiscrepancies — GET /inventory/sessions/:id/discrepancies
 func (h *InventoryHandler) ListDiscrepancies(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {
@@ -204,7 +200,6 @@ func (h *InventoryHandler) ListDiscrepancies(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// ConfirmDiscrepancy — POST /inventory/sessions/:id/discrepancies/:item_id/confirm (admin only)
 func (h *InventoryHandler) ConfirmDiscrepancy(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {

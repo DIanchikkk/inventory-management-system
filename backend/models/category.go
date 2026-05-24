@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Category — справочник категорий объекта учёта (отдельная таблица).
 type Category struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key;" json:"id"`
 	Name      string    `gorm:"uniqueIndex;not null" json:"name"`

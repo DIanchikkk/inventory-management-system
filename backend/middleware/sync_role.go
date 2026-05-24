@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// SyncRoleFromDB подставляет актуальную роль пользователя из БД вместо значения из JWT (инвалидация прав без ожидания истечения токена).
 func SyncRoleFromDB(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw, ok := c.Get(ContextUserIDKey)

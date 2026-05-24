@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// PrepareItemsCategoryIDColumn — до AutoMigrate с NOT NULL: у уже существующей таблицы items добавляет
-// category_id как nullable, чтобы можно было заполнить строки и не падать на ADD ... NOT NULL (SQLSTATE 23502).
 func PrepareItemsCategoryIDColumn(db *gorm.DB) error {
 	if !db.Migrator().HasTable(&models.Item{}) {
 		return nil
@@ -21,7 +19,6 @@ func PrepareItemsCategoryIDColumn(db *gorm.DB) error {
 	return db.Exec(`ALTER TABLE items ADD COLUMN category_id uuid`).Error
 }
 
-// MigrateItemsCategoryID заполняет category_id у объектов после добавления справочника категорий.
 func MigrateItemsCategoryID(db *gorm.DB) error {
 	if !db.Migrator().HasTable(&models.Item{}) {
 		return nil

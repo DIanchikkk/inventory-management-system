@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// EnsureCategory возвращает id категории по имени; при отсутствии создаёт запись в справочнике.
 func EnsureCategory(db *gorm.DB, name string) (uuid.UUID, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {

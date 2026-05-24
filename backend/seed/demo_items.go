@@ -13,7 +13,6 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:embed data/demo_items.json
 var demoItemsJSON []byte
 
 type demoItemRow struct {
@@ -27,9 +26,16 @@ type demoItemRow struct {
 	MinQuantity      int    `json:"min_quantity"`
 	PurchaseDate     string `json:"purchase_date"`
 	ServiceLifeYears int    `json:"service_life_years"`
+	ImageURL         string `json:"image_url"`
 }
 
-// demoItemImagePath — один файл на SKU: /uploads/item-images/seed-<sku-lower>.jpg (NB-001 → seed-nb-001.jpg).
+func demoItemImageURL(r demoItemRow) string {
+	if u := strings.TrimSpace(r.ImageURL); u != "" {
+		return u
+	}
+	return demoItemImagePath(strings.TrimSpace(r.SKU))
+}
+
 func demoItemImagePath(sku string) string {
 	s := strings.TrimSpace(sku)
 	if s == "" {
@@ -45,7 +51,7 @@ func syncDemoSeedImageURLs(db *gorm.DB, rows []demoItemRow) error {
 		if sku == "" {
 			continue
 		}
-		want := demoItemImagePath(sku)
+		want := demoItemImageURL(r)
 		if want == "" {
 			continue
 		}
@@ -98,7 +104,7 @@ func seedDemoItems(db *gorm.DB) error {
 			Location:         strings.TrimSpace(r.Location),
 			MinQuantity:      r.MinQuantity,
 			PurchaseDate:     pd,
-			ImageURL:         demoItemImagePath(strings.TrimSpace(r.SKU)),
+			ImageURL:         demoItemImageURL(r),
 			ServiceLifeYears: r.ServiceLifeYears,
 		}
 		if item.ServiceLifeYears < 1 {

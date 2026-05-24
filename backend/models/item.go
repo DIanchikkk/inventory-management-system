@@ -12,7 +12,7 @@ type Item struct {
 	SKU              string         `gorm:"not null;default:'';index" json:"sku"`
 	Name             string         `gorm:"not null" json:"name"`
 	CategoryID       uuid.UUID      `gorm:"type:uuid;not null;index" json:"category_id"`
-	Category         string         `gorm:"not null;default:'';index" json:"category"` // денормализация названия для поиска и CSV
+	Category         string         `gorm:"not null;default:'';index" json:"category"`
 	Description      string         `gorm:"not null" json:"description"`
 	Quantity         int            `gorm:"not null" json:"quantity"`
 	Unit             string         `gorm:"not null;default:'шт'" json:"unit"`

@@ -1,0 +1,95 @@
+.group {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.single {
+  display: inline-flex;
+}
+
+.trigger {
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.triggerOpen:global(.button--outline) {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.chevron {
+  font-size: 0.75rem;
+  line-height: 1;
+  opacity: 0.65;
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.panelShell {
+  position: fixed;
+  z-index: 200;
+}
+
+.panelFloating {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: max-content;
+  max-width: min(20rem, calc(100vw - 1rem));
+  padding: 0.35rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  animation: menuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menuItem:global(.button) {
+  width: 100%;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.menuItemActive:global(.button) {
+  background: var(--color-secondary);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.menuLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.menuLink:hover {
+  background: var(--color-secondary);
+}

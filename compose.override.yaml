@@ -1,0 +1,4 @@
+services:
+  api:
+    volumes:
+      - ./frontend/src/assets/uploads:/app/uploads

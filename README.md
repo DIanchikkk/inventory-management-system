@@ -1,139 +1,74 @@
-# Inventory Management System
+# inventory-system
 
-Веб-система учёта объектов и проведения инвентаризации. MVP для выпускной квалификационной работы (направление «Программная инженерия»).
+Учёт объектов и документы инвентаризации. Monorepo: Go API, React SPA, PostgreSQL.
 
-## Стек технологий
+Стек: Go 1.23, Gin, GORM; React, TypeScript, Vite; JWT; Docker Compose.
 
-- **Frontend:** React + TypeScript + Vite
-- **Backend:** Go + Gin
-- **База данных:** PostgreSQL
-- **ORM:** GORM
-- **API:** REST + JWT, CORS для SPA
+Материалы к записке: [docs/FOR_THESIS.md](docs/FOR_THESIS.md). Структура кода: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## Возможности
+## Требования
 
-- Аутентификация (логин/пароль, JWT), роли **admin** / **user** с разграничением на API
-- CRUD объектов учёта (изменение и CSV — только **admin**), поиск `?q=` — любой авторизованный пользователь
-- Инвентаризационные сессии и сверка факт/учёт (REST API)
-- **QR-код** на карточке объекта во фронтенде (ссылка на страницу объекта)
-- Тёмная тема и адаптивная вёрстка (базово)
-- **Health** с проверкой PostgreSQL (`GET /health`)
-- Docker Compose (Postgres + API), CI (GitHub Actions, `go test`)
+Go 1.23+, Node.js 18+, PostgreSQL 14+ (или только Docker).
 
-Материалы для пояснительной записки: [docs/FOR_THESIS.md](docs/FOR_THESIS.md).
+## Запуск
 
-## Запуск проекта
-
-### Требования
-
-- Go 1.23+
-- Node.js 18+
-- PostgreSQL 14+ (если не используете Docker)
-
-### Вариант A: Docker Compose (всё в одном)
-
-Из корня репозитория:
+**Docker** (из корня):
 
 ```bash
 docker compose up --build
 ```
 
-API: `http://localhost:8080`, проверка: `curl -s http://localhost:8080/health`.
+API: `http://127.0.0.1:8080`, проверка: `curl -s http://127.0.0.1:8080/health`.
 
-Переменные в `compose.yaml` можно подправить (в т.ч. `JWT_SECRET` для реального стенда).
+Фото с хоста в контейнер: `compose.override.yaml` (образец — `compose.override.yaml.example`).
 
-### Вариант B: локально
-
-**1. База данных**
+**Локально**
 
 ```bash
+# БД
 createdb inventory_db
+
+# API (корень репозитория)
+cp backend/.env.example backend/.env   # DATABASE_URL, JWT_SECRET
+go run ./backend
+
+# UI
+cd frontend && cp .env.example .env && npm install && npm run dev
 ```
 
-**2. Backend** (из корня, где `go.mod`):
+Фронт: `http://127.0.0.1:5174`. В `frontend/.env`: `VITE_API_URL=http://127.0.0.1:8080`.
 
-```bash
-cd backend && cp .env.example .env
-# Заполните DATABASE_URL, JWT_SECRET; при фронте на Vite задайте CORS_ORIGINS при необходимости
-cd .. && go run ./backend
-```
-
-Тесты (только пакеты API; не использовать `./...` из корня — в `node_modules` фронта бывают сторонние `go.mod`):
+Тесты API:
 
 ```bash
 go test ./backend/...
 ```
 
-**3. Frontend**
+Не запускать `go test ./...` из корня (в `frontend/node_modules` встречаются чужие `go.mod`).
 
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
+## Учётные записи (seed)
 
-Откройте `http://localhost:5173`. API по умолчанию: `http://localhost:8080` (см. `frontend/.env`).
+| Логин | Пароль | Роль |
+|-------|--------|------|
+| admin | admin123 | admin |
+| user | user123 | user |
 
-### Тестовые учётные записи (seed)
+Сброс демо-данных: `INVENTORY_RESET_DATA=1` в `backend/.env` перед стартом API.
 
-- **admin** / **admin123**
-- **user** / **user123**
-- При старте backend автоматически добавляются демо-данные для проверки интерфейса:
-  5 объектов учёта + 3 инвентаризационные сессии с разными статусами и строками результатов.
-- Для очистки старых данных перед автозаполнением используйте `INVENTORY_RESET_DATA=1`.
+## API
+
+Защищённые маршруты: заголовок `Authorization: Bearer <token>`.
+
+- Публично: `POST /auth/login`, `GET /health`, `GET /uploads/...`
+- С JWT: объекты (чтение), категории, инвентаризация, отчёты
+- Только admin: `POST/PUT/DELETE /items`, импорт/экспорт CSV, категории (создание)
+
+Пользователь `user` видит только свои сессии инвентаризации; `admin` — все.
+
+## QR-коды
+
+На карточке объекта и в печати этикеток (`Отчёты → QR-этикетки`) один QR ведёт на страницу объекта: `/items/{id}`. Фактический пересчёт выполняется в документе инвентаризации (поле сканирования/вставки UUID строки сессии). Старые этикетки с `/inventory/item/{id}` перенаправляются на ту же карточку.
 
 ## CI
 
-При push в `main` / `master` запускается [GitHub Actions](.github/workflows/ci.yml): `go test ./backend/...`.
-
-## API (кратко)
-
-Защищённые маршруты требуют `Authorization: Bearer <JWT>`.
-
-### Роли
-
-| Действие | admin | user |
-|----------|-------|------|
-| `GET /items`, `GET /items/:id` | да | да |
-| `POST/PUT/DELETE /items`, `GET /items/export` | да | **403** |
-| Инвентаризация (сессии, результаты, complete) | да; видит **все** сессии | да; только **свои** сессии |
-
-| Раздел | Эндпоинты |
-|--------|-----------|
-| Auth | `POST /auth/login`, `GET /auth/me` |
-| Items | `GET /items`, `GET /items/:id` (все с JWT); **`POST/PUT/DELETE /items`**, **`GET /items/export`** (только admin) |
-| Inventory | `POST/GET /inventory/sessions`, `GET .../sessions/:id`, результаты, `complete` |
-| Сервис | **`GET /health`** — `{ "status", "database" }` |
-
-Полный список и примеры `curl` — ниже.
-
-### Пример с токеном
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' | jq -r .token)
-
-curl -s http://localhost:8080/items -H "Authorization: Bearer $TOKEN"
-curl -s http://localhost:8080/auth/me -H "Authorization: Bearer $TOKEN"
-curl -s http://localhost:8080/health
-```
-
-## Структура репозитория
-
-Monorepo: модуль Go в корне (`go.mod`), фронт отдельно, инфраструктура в корне. Папка **`.github/workflows/`** — стандарт GitHub для CI; переносить в `backend/` нельзя (Actions ищет только там). Подробно: [ARCHITECTURE.md](ARCHITECTURE.md).
-
-```
-inventory-system/
-├── .github/workflows/   # CI (go test) — не код приложения
-├── backend/             # Go API
-├── frontend/            # React + Vite
-├── docs/                # заметки для записки
-├── compose.yaml
-├── Dockerfile
-├── go.mod
-└── ARCHITECTURE.md      # схема и обоснование структуры
-```
-
-Инвентаризация на фронте можно расширить отдельными страницами; **REST для сессий уже есть** в backend.
+`.github/workflows/ci.yml` — `go test ./backend/...` на push в `main` / `master`.

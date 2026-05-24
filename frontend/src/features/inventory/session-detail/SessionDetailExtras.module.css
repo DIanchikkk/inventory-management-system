@@ -1,0 +1,52 @@
+.discrepancies {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.discrepanciesTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.discrepancyList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.6rem;
+}
+
+.discrepancyCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.discrepancyName {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.discrepancyMeta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.discrepancyCommentWarn {
+  border-left: 4px solid var(--color-error, #b00020);
+}
+
+@media print {
+  .discrepancyCard button {
+    display: none !important;
+  }
+}

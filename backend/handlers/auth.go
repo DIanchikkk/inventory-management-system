@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// AuthHandler — логин и профиль по JWT.
 type AuthHandler struct {
 	DB        *gorm.DB
 	JWTSecret string
@@ -37,7 +36,6 @@ type loginResponse struct {
 	User  userResponse `json:"user"`
 }
 
-// Login — POST /auth/login
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -88,7 +86,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// Me — GET /auth/me (только с валидным JWT)
 func (h *AuthHandler) Me(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {

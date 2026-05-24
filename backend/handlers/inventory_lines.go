@@ -80,7 +80,6 @@ func (h *InventoryHandler) linesBaseQuery(sessionID uuid.UUID, filter string, se
 	return q
 }
 
-// GetSessionLines — GET /inventory/sessions/:id/lines
 func (h *InventoryHandler) GetSessionLines(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {

@@ -1,0 +1,64 @@
+.top {
+  display: block;
+  overflow: visible;
+}
+
+.topMain {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight, -0.02em);
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  max-width: 38rem;
+  line-height: 1.5;
+}
+
+.docMeta {
+  margin: 0.65rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  max-width: 40rem;
+  font-size: 0.8125rem;
+}
+
+.docMetaDt {
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.docMetaDd {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.topActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  max-width: 100%;
+}
+
+@media (max-width: 520px) {
+  .topActions {
+    width: 100%;
+  }
+}

@@ -15,7 +15,6 @@ const (
 	ContextRoleKey   = "role"
 )
 
-// AuthRequired проверяет Authorization: Bearer <JWT> и кладёт user_id и role в контекст.
 func AuthRequired(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h := c.GetHeader("Authorization")
@@ -55,7 +54,6 @@ func AuthRequired(secret string) gin.HandlerFunc {
 	}
 }
 
-// GetRole — роль из контекста после AuthRequired.
 func GetRole(c *gin.Context) (string, bool) {
 	v, ok := c.Get(ContextRoleKey)
 	if !ok {
@@ -65,7 +63,6 @@ func GetRole(c *gin.Context) (string, bool) {
 	return s, ok
 }
 
-// RequireAdmin возвращает 403, если в токене role != "admin".
 func RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, _ := c.Get(ContextRoleKey)

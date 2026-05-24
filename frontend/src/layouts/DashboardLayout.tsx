@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { logout as authLogout } from "../api/auth.api";
-import { fetchDashboardSummary } from "../api/dashboard.api";
-import type { DashboardSummary } from "../types";
-import { useAuth } from "../context/useAuth";
-import { useMediaQuery } from "../hooks/useMediaQuery";
+import { logout as authLogout } from "@/shared/api/auth.api";
+import { fetchDashboardSummary } from "@/shared/api/dashboard.api";
+import type { DashboardSummary } from "@/shared/types";
+import { useAuth } from "@/shared/context/useAuth";
+import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import styles from "./DashboardLayout.module.css";
 
-/** Контекст для страниц внутри лейаута: единая сводка без повторных запросов с каждой страницы. */
 export type DashboardOutletContext = {
   dashboardSummary: DashboardSummary | null;
   refreshDashboardSummary: () => Promise<void>;
@@ -307,7 +306,6 @@ export function DashboardLayout() {
                 {userMenuOpen && (
                   <div className={styles.userMenu} role="menu" aria-label="Меню пользователя">
                     <p className={styles.userMenuName}>{user.username}</p>
-                    <p className={styles.userMenuHint}>Быстрые действия</p>
                     <button type="button" className={styles.userMenuItem} onClick={() => nav("/settings")}>
                       Настройки
                     </button>

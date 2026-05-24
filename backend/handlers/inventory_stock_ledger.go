@@ -17,9 +17,38 @@ import (
 
 type stockLedgerRowDTO struct {
 	models.InventoryStockLedger
-	MovementLabel string `json:"movement_label"`
-	ItemSKU       string `json:"item_sku"`
-	ItemName      string `json:"item_name"`
+	MovementLabel        string `json:"movement_label"`
+	AdjustmentDocumentNo string `json:"adjustment_document_no,omitempty"`
+	ItemSKU              string `json:"item_sku"`
+	ItemName             string `json:"item_name"`
+}
+
+func adjustmentDocNosByLedger(db *gorm.DB, ledgers []models.InventoryStockLedger) map[string]string {
+	ids := make([]uuid.UUID, 0)
+	seen := make(map[string]struct{})
+	for _, L := range ledgers {
+		if L.AdjustmentDocumentID == nil {
+			continue
+		}
+		k := L.AdjustmentDocumentID.String()
+		if _, ok := seen[k]; ok {
+			continue
+		}
+		seen[k] = struct{}{}
+		ids = append(ids, *L.AdjustmentDocumentID)
+	}
+	out := make(map[string]string)
+	if len(ids) == 0 {
+		return out
+	}
+	var docs []models.StockAdjustmentDocument
+	if err := db.Where("id IN ?", ids).Find(&docs).Error; err != nil {
+		return out
+	}
+	for _, d := range docs {
+		out[d.ID.String()] = d.DocumentNo
+	}
+	return out
 }
 
 func stockMovementLabelRu(m string) string {
@@ -33,7 +62,6 @@ func stockMovementLabelRu(m string) string {
 	}
 }
 
-// ListSessionStockLedger — GET /inventory/sessions/:id/stock-ledger (реестр корректировок после проведения документа).
 func (h *InventoryHandler) ListSessionStockLedger(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {
@@ -85,12 +113,18 @@ func (h *InventoryHandler) ListSessionStockLedger(c *gin.Context) {
 	for _, it := range items {
 		byID[it.ID.String()] = it
 	}
+	adjNoByID := adjustmentDocNosByLedger(h.DB, ledgers)
 	out := make([]stockLedgerRowDTO, 0, len(ledgers))
 	for _, L := range ledgers {
 		it := byID[L.ItemID.String()]
+		adjNo := ""
+		if L.AdjustmentDocumentID != nil {
+			adjNo = adjNoByID[L.AdjustmentDocumentID.String()]
+		}
 		out = append(out, stockLedgerRowDTO{
 			InventoryStockLedger: L,
 			MovementLabel:        stockMovementLabelRu(L.Movement),
+			AdjustmentDocumentNo: adjNo,
 			ItemSKU:              it.SKU,
 			ItemName:             it.Name,
 		})
@@ -99,38 +133,42 @@ func (h *InventoryHandler) ListSessionStockLedger(c *gin.Context) {
 }
 
 type globalStockLedgerRowDTO struct {
-	ID              uuid.UUID  `json:"id"`
-	SessionID       uuid.UUID  `json:"session_id"`
-	DocumentNo      string     `json:"document_no"`
-	ItemID          uuid.UUID  `json:"item_id"`
-	ItemSKU         string     `json:"item_sku"`
-	ItemName        string     `json:"item_name"`
-	Movement        string     `json:"movement"`
-	MovementLabel   string     `json:"movement_label"`
-	AccountingQty   int        `json:"accounting_qty"`
-	ActualQty       int        `json:"actual_qty"`
-	BalanceBefore   int        `json:"balance_before"`
-	BalanceAfter    int        `json:"balance_after"`
-	Delta           int        `json:"delta"`
-	CreatedAt       time.Time  `json:"created_at"`
-	ActorID         *uuid.UUID `json:"actor_id,omitempty"`
+	ID                   uuid.UUID  `json:"id"`
+	SessionID            uuid.UUID  `json:"session_id"`
+	DocumentNo           string     `json:"document_no"`
+	AdjustmentDocumentID *uuid.UUID `json:"adjustment_document_id,omitempty"`
+	AdjustmentDocumentNo string     `json:"adjustment_document_no,omitempty"`
+	ItemID               uuid.UUID  `json:"item_id"`
+	ItemSKU              string     `json:"item_sku"`
+	ItemName             string     `json:"item_name"`
+	Movement             string     `json:"movement"`
+	MovementLabel        string     `json:"movement_label"`
+	AccountingQty        int        `json:"accounting_qty"`
+	ActualQty            int        `json:"actual_qty"`
+	BalanceBefore        int        `json:"balance_before"`
+	BalanceAfter         int        `json:"balance_after"`
+	Delta                int        `json:"delta"`
+	CreatedAt            time.Time  `json:"created_at"`
+	ActorID              *uuid.UUID `json:"actor_id,omitempty"`
 }
 
 type globalLedgerJoinScan struct {
-	ID              uuid.UUID  `gorm:"column:id"`
-	SessionID       uuid.UUID  `gorm:"column:session_id"`
-	DocumentNo      string     `gorm:"column:document_no"`
-	ItemID          uuid.UUID  `gorm:"column:item_id"`
-	ItemSKU         string     `gorm:"column:item_sku"`
-	ItemName        string     `gorm:"column:item_name"`
-	Movement        string     `gorm:"column:movement"`
-	AccountingQty   int        `gorm:"column:accounting_qty"`
-	ActualQty       int        `gorm:"column:actual_qty"`
-	BalanceBefore   int        `gorm:"column:balance_before"`
-	BalanceAfter    int        `gorm:"column:balance_after"`
-	Delta           int        `gorm:"column:delta"`
-	CreatedAt       time.Time  `gorm:"column:created_at"`
-	ActorID         *uuid.UUID `gorm:"column:actor_id"`
+	ID                   uuid.UUID  `gorm:"column:id"`
+	SessionID            uuid.UUID  `gorm:"column:session_id"`
+	DocumentNo           string     `gorm:"column:document_no"`
+	AdjustmentDocumentID *uuid.UUID `gorm:"column:adjustment_document_id"`
+	AdjustmentDocumentNo string     `gorm:"column:adjustment_document_no"`
+	ItemID               uuid.UUID  `gorm:"column:item_id"`
+	ItemSKU              string     `gorm:"column:item_sku"`
+	ItemName             string     `gorm:"column:item_name"`
+	Movement             string     `gorm:"column:movement"`
+	AccountingQty        int        `gorm:"column:accounting_qty"`
+	ActualQty            int        `gorm:"column:actual_qty"`
+	BalanceBefore        int        `gorm:"column:balance_before"`
+	BalanceAfter         int        `gorm:"column:balance_after"`
+	Delta                int        `gorm:"column:delta"`
+	CreatedAt            time.Time  `gorm:"column:created_at"`
+	ActorID              *uuid.UUID `gorm:"column:actor_id"`
 }
 
 type paginatedGlobalStockLedgerResponse struct {
@@ -140,7 +178,6 @@ type paginatedGlobalStockLedgerResponse struct {
 	Total    int64                     `json:"total"`
 }
 
-// ListGlobalStockLedger — GET /inventory/stock-ledger/global (все проведённые документы: реестр списаний/оприходований).
 func (h *InventoryHandler) ListGlobalStockLedger(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {
@@ -186,8 +223,11 @@ func (h *InventoryHandler) ListGlobalStockLedger(c *gin.Context) {
 	var scans []globalLedgerJoinScan
 	if err := joinQ().
 		Select(`l.id, l.session_id, COALESCE(NULLIF(TRIM(s.document_no), ''), s.id::text) AS document_no,
+			l.adjustment_document_id,
+			COALESCE(NULLIF(TRIM(adj.document_no), ''), '') AS adjustment_document_no,
 			l.item_id, i.sku AS item_sku, i.name AS item_name, l.movement,
 			l.accounting_qty, l.actual_qty, l.balance_before, l.balance_after, l.delta, l.created_at, l.actor_id`).
+		Joins("LEFT JOIN stock_adjustment_documents AS adj ON adj.id = l.adjustment_document_id").
 		Order("l.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
@@ -200,21 +240,23 @@ func (h *InventoryHandler) ListGlobalStockLedger(c *gin.Context) {
 	out := make([]globalStockLedgerRowDTO, 0, len(scans))
 	for _, r := range scans {
 		out = append(out, globalStockLedgerRowDTO{
-			ID:              r.ID,
-			SessionID:       r.SessionID,
-			DocumentNo:      r.DocumentNo,
-			ItemID:          r.ItemID,
-			ItemSKU:         r.ItemSKU,
-			ItemName:        r.ItemName,
-			Movement:        r.Movement,
-			MovementLabel:   stockMovementLabelRu(r.Movement),
-			AccountingQty:   r.AccountingQty,
-			ActualQty:       r.ActualQty,
-			BalanceBefore:   r.BalanceBefore,
-			BalanceAfter:    r.BalanceAfter,
-			Delta:           r.Delta,
-			CreatedAt:       r.CreatedAt,
-			ActorID:         r.ActorID,
+			ID:                   r.ID,
+			SessionID:            r.SessionID,
+			DocumentNo:           r.DocumentNo,
+			AdjustmentDocumentID: r.AdjustmentDocumentID,
+			AdjustmentDocumentNo: r.AdjustmentDocumentNo,
+			ItemID:               r.ItemID,
+			ItemSKU:              r.ItemSKU,
+			ItemName:             r.ItemName,
+			Movement:             r.Movement,
+			MovementLabel:        stockMovementLabelRu(r.Movement),
+			AccountingQty:        r.AccountingQty,
+			ActualQty:            r.ActualQty,
+			BalanceBefore:        r.BalanceBefore,
+			BalanceAfter:         r.BalanceAfter,
+			Delta:                r.Delta,
+			CreatedAt:            r.CreatedAt,
+			ActorID:              r.ActorID,
 		})
 	}
 

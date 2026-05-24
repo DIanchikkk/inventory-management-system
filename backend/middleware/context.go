@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// GetUserID возвращает UUID пользователя, установленный AuthRequired.
 func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	v, ok := c.Get(ContextUserIDKey)
 	if !ok {

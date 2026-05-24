@@ -76,7 +76,7 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-sm);
-  background: linear-gradient(145deg, var(--color-accent) 0%, #8a7345 100%);
+  background: url("/brand-mark.svg") center / cover no-repeat;
   flex-shrink: 0;
 }
 

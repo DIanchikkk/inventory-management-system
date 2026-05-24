@@ -51,7 +51,6 @@ func (s *slidingCounter) allow(key string) bool {
 
 var loginBurstLimiter = newSlidingCounter(loginMaxPerWindow, loginWindow)
 
-// LoginRateLimit ограничивает число запросов на POST /auth/login с одного IP (защита от перебора).
 func LoginRateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()

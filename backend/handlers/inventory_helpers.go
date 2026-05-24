@@ -56,8 +56,6 @@ func sessionSummaryForSession(db *gorm.DB, sessionID uuid.UUID) (sessionStatusSu
 	return out, nil
 }
 
-// parseExpectedUpdatedAt читает опциональный optimistic-lock из JSON-body (ожидается RFC3339).
-// Если Content-Length == 0 или поле не задано — проверка версии не выполняется (обратная совместимость).
 func parseExpectedUpdatedAt(c *gin.Context) (expected *time.Time, badRequest bool) {
 	if c.Request.ContentLength == 0 {
 		return nil, false
@@ -83,7 +81,6 @@ func parseExpectedUpdatedAt(c *gin.Context) (expected *time.Time, badRequest boo
 	return &t, false
 }
 
-// parseCompleteSessionBody — тело завершения сессии: optimistic lock + опция принудительного завершения (только админ).
 func parseCompleteSessionBody(c *gin.Context) (expected *time.Time, allowIncomplete bool, badRequest bool) {
 	if c.Request.ContentLength == 0 {
 		return nil, false, false
@@ -130,8 +127,6 @@ func checkSessionVersion(c *gin.Context, s *models.InventorySession, expected *t
 	return true
 }
 
-// computeResultStatus сравнивает факт с учётным количеством из карточки объекта.
-// actual должен быть >= 0 (проверяется в хендлерах).
 func computeResultStatus(expected, actual int) string {
 	if actual == expected {
 		return models.ResultStatusMatch

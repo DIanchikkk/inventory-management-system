@@ -51,6 +51,8 @@ func migrateAndSeed(db *gorm.DB) error {
 		&models.InventorySessionEvent{},
 		&models.InventoryStockLedger{},
 		&models.InventoryDocYearSeq{},
+		&models.StockAdjustmentDocument{},
+		&models.StockAdjustmentDocYearSeq{},
 	); err != nil {
 		return err
 	}
@@ -61,6 +63,12 @@ func migrateAndSeed(db *gorm.DB) error {
 		return err
 	}
 	if err := seed.Run(db); err != nil {
+		return err
+	}
+	if err := seed.BackfillAuditActorUsernames(db); err != nil {
+		return err
+	}
+	if err := seed.BackfillStockAdjustmentDocuments(db); err != nil {
 		return err
 	}
 	return seed.BackfillInventoryDocuments(db)

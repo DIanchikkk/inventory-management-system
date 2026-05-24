@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ExportAuditCSV — GET /inventory/sessions/:id/audit/export
 func (h *InventoryHandler) ExportAuditCSV(c *gin.Context) {
 	uid, ok := middleware.GetUserID(c)
 	if !ok {

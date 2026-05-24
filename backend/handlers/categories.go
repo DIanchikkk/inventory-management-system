@@ -10,12 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// CategoryHandler — справочник категорий объектов учёта.
 type CategoryHandler struct {
 	DB *gorm.DB
 }
 
-// ListCategories — GET /categories
 func (h *CategoryHandler) ListCategories(c *gin.Context) {
 	var cats []models.Category
 	if err := h.DB.Order("name ASC").Find(&cats).Error; err != nil {
@@ -30,7 +28,6 @@ type createCategoryBody struct {
 	Name string `json:"name" binding:"required"`
 }
 
-// CreateCategory — POST /categories (admin)
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 	var body createCategoryBody
 	if err := c.ShouldBindJSON(&body); err != nil {
