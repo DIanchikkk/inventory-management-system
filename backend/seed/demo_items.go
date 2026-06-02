@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:embed data/demo_items.json
 var demoItemsJSON []byte
 
 type demoItemRow struct {

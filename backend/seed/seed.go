@@ -33,10 +33,10 @@ func upsertUser(db *gorm.DB, username, role, plain string) error {
 
 func seedAdminAndUser(db *gorm.DB) error {
 	log.Println("Seeding: upsert admin and user...")
-	if err := upsertUser(db, "admin", "admin", "admin123"); err != nil {
+	if err := upsertUser(db, "admin", "admin", "admin321"); err != nil {
 		return err
 	}
-	if err := upsertUser(db, "user", "user", "user123"); err != nil {
+	if err := upsertUser(db, "user", "user", "user321"); err != nil {
 		return err
 	}
 	log.Println("Seeding: admin (admin/admin123) and user (user/user123) are in the database")
