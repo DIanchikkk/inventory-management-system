@@ -5,10 +5,10 @@
   "description": "Monorepo: Go API (backend) + React (frontend)",
   "scripts": {
     "dev:fe": "npm --prefix frontend run dev",
-    "dev:be": "go run ./backend",
+    "dev:be": "go -C backend run .",
     "build:fe": "npm --prefix frontend run build",
     "lint:fe": "npm --prefix frontend run lint",
-    "test:be": "go test ./backend/..."
+    "test:be": "go -C backend test -buildvcs=false ./..."
   },
   "dependencies": {},
   "devDependencies": {}

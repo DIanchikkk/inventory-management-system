@@ -1,18 +1,19 @@
 # Архитектура
 
-Monorepo. Модуль Go в корне (`inventory-system`), импорты вида `inventory-system/backend/...`.
+Monorepo. Модуль Go в `backend/` (`inventory-system/backend`), импорты вида `inventory-system/backend/...`.
 
 ```
 inventory-system/
-├── backend/           # HTTP API
+├── backend/           # HTTP API, go.mod, go.sum
 │   ├── handlers/      # auth, items, inventory, categories, dashboard
-│   ├── handlers/      # плоский пакет handlers (params.go — ParseUUIDParam)
-├── frontend/          # SPA
+│   ├── main.go, routes.go
+├── frontend/          # SPA, package.json, tsconfig, Vite
 ├── docs/
 ├── frontend/src/assets/uploads/  # демо-фото объектов (в образе и/или volume)
+├── package.json       # скрипты dev:fe / dev:be (опционально)
+├── tsconfig.json      # ссылка на frontend для IDE
 ├── Dockerfile
 ├── compose.yaml
-├── go.mod
 └── .github/workflows/ci.yml
 ```
 

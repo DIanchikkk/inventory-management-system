@@ -21,7 +21,6 @@ type Config struct {
 
 func Load() (*Config, error) {
 	godotenv.Load(".env")
-	godotenv.Load("backend/.env")
 	dataBase := getEnv("DATABASE_URL", "host=localhost port=5432 user=postgres password=postgres dbname=inventory_db sslmode=disable")
 	jwt := getEnv("JWT_SECRET", "your-secret-key-change-me")
 	port := getEnv("PORT", "8080")

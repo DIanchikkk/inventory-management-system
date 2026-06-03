@@ -1,10 +1,10 @@
 FROM golang:1.23-alpine AS builder
-WORKDIR /src
+WORKDIR /src/backend
 RUN apk add --no-cache git ca-certificates
-COPY go.mod go.sum ./
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-COPY backend ./backend
-RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o /out/api ./backend
+COPY backend/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o /out/api .
 
 FROM alpine:3.20
 RUN apk --no-cache add ca-certificates tzdata

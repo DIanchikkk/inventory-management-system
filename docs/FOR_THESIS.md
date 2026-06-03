@@ -6,7 +6,7 @@
 
 1. PostgreSQL, создать БД `inventory_db`.
 2. `cd backend && cp .env.example .env` — заполнить `DATABASE_URL`, `JWT_SECRET`.
-3. `go run ./backend` из корня репозитория (где `go.mod`) или `cd backend && go run .`
+3. `go -C backend run .` из корня или `cd backend && go run .` (go.mod в `backend/`)
 4. Фронт: `cd frontend && npm install && npm run dev`.
 
 ### Docker Compose (одна команда для проверяющего)

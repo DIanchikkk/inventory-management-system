@@ -28,9 +28,10 @@ API: `http://127.0.0.1:8080`, проверка: `curl -s http://127.0.0.1:8080/h
 # БД
 createdb inventory_db
 
-# API (корень репозитория)
+# API (каталог backend, там же go.mod)
 cp backend/.env.example backend/.env   # DATABASE_URL, JWT_SECRET
-go run ./backend
+go -C backend run .
+# или: cd backend && go run .
 
 # UI
 cd frontend && cp .env.example .env && npm install && npm run dev
@@ -41,10 +42,9 @@ cd frontend && cp .env.example .env && npm install && npm run dev
 Тесты API:
 
 ```bash
-go test ./backend/...
+go -C backend test ./...
+# или: cd backend && go test ./...
 ```
-
-Не запускать `go test ./...` из корня (в `frontend/node_modules` встречаются чужие `go.mod`).
 
 ## Учётные записи (seed)
 
@@ -71,4 +71,4 @@ go test ./backend/...
 
 ## CI
 
-`.github/workflows/ci.yml` — `go test ./backend/...` на push в `main` / `master`.
+`.github/workflows/ci.yml` — `go test` в `backend/` на push в `main` / `master`.
