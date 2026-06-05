@@ -155,6 +155,24 @@ func (h *InventoryHandler) ListSessions(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
+	userIDs := make([]uuid.UUID, 0, len(sessions))
+	for _, s := range sessions {
+		userIDs = append(userIDs, s.CreatedBy)
+	}
+
+	var users []models.User
+	if len(userIDs) > 0 {
+		h.DB.Where("id IN ?", userIDs).Find(&users)
+	}
+
+	usernames := make(map[uuid.UUID]string)
+	for _, u := range users {
+		usernames[u.ID] = u.Username
+	}
+
+	for i := range sessions {
+		sessions[i].CreatedByUsername = usernames[sessions[i].CreatedBy]
+	}
 	c.JSON(http.StatusOK, paginatedSessionsResponse{
 		Sessions: sessions,
 		Page:     page,
@@ -186,6 +204,10 @@ func (h *InventoryHandler) GetSession(c *gin.Context) {
 		log.Printf("get session: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
+	}
+	var user models.User
+	if err := h.DB.First(&user, "id = ?", s.CreatedBy).Error; err == nil {
+		s.CreatedByUsername = user.Username
 	}
 	if s.CreatedBy != uid && role != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})

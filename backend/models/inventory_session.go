@@ -20,6 +20,7 @@ type InventorySession struct {
 	CreatedAt          time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt          time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 	CreatedBy          uuid.UUID  `gorm:"type:uuid;not null;index" json:"created_by"`
+	CreatedByUsername  string     `gorm:"-" json:"created_by_username,omitempty"`
 	Status             string     `gorm:"not null" json:"status"`
 	DocumentNo         string     `gorm:"not null;default:'';index" json:"document_no"`
 	Notes              string     `gorm:"not null;default:''" json:"notes"`

@@ -270,14 +270,14 @@ export function DashboardLayout() {
           <div className={styles.headerLeft}>
             {!isDesktop && (
               <button
-                type="button"
-                className={styles.menuBtn}
-                aria-expanded={sidebarOpen}
-                aria-controls="app-sidebar"
-                onClick={() => setSidebarOpen((v) => !v)}
-              >
-                Меню
-              </button>
+              type="button"
+              className={styles.menuBtn}
+              aria-expanded={sidebarOpen}
+              aria-controls="app-sidebar"
+              onClick={() => setSidebarOpen((v) => !v)}
+            >
+              ☰
+            </button>
             )}
             <span className={styles.headerCrumb}>
               {location.pathname.startsWith("/reports")

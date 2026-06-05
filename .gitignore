@@ -20,7 +20,4 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-frontend/src/assets/uploads/item-images/*.jpg
-frontend/src/assets/uploads/item-images/*.jpeg
-frontend/src/assets/uploads/item-images/*.png
 !frontend/src/assets/uploads/item-images/README.md
